@@ -89,6 +89,8 @@ blueprint:
                   value: "numeric_state_below"
                 - label: 10 - Numeric State - Above & Below
                   value: "numeric_state_above_below"
+                - label: 11 - Timer - Idle
+                  value: "timer_idle"
         trigger_state_entity:
           name: State Entities
           description: >
