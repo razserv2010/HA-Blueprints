@@ -3,7 +3,7 @@ blueprint:
   description: >
     # 📢 Notifications & Announcements
     
-    **Version: 1.5** (תמיכה נוספת ב-"idle" עבור timer entities)
+    **Version: 1.5** (תוספת תמיכה ב-"idle" לטיימרים)
 
   domain: automation
   input:
@@ -74,27 +74,27 @@ triggers:
 condition:
   - condition: or
     conditions:
-      - condition: and
+      - condition: and # טריגר לכל מצב כללי
         conditions:
           - condition: trigger
             id: 't0'
           - "{{ trigger_state == 'button_any_state' }}"
-      - condition: and
+      - condition: and # טריגר עבור מצבים נבחרים
         conditions:
           - condition: trigger
             id: 't1'
-          - "{{ trigger_state not in ['button_any_state', 'numeric_state_above', 'numeric_state_below', 'numeric_state_above_below'] }}"
-      - condition: and
+          - "{{ trigger_state not in ['button_any_state', 'numeric_state_above', 'numeric_state_below', 'numeric_state_above_below', 'idle'] }}"
+      - condition: and # טריגר לערך מספרי מעל
         conditions:
           - condition: trigger
             id: 't2'
           - "{{ trigger_state in ['numeric_state_above', 'numeric_state_above_below'] }}"
-      - condition: and
+      - condition: and # טריגר לערך מספרי מתחת
         conditions:
           - condition: trigger
             id: 't3'
           - "{{ trigger_state in ['numeric_state_below', 'numeric_state_above_below'] }}"
-      - condition: and
+      - condition: and # טריגר ל-"idle"
         conditions:
           - condition: trigger
             id: 't4'
