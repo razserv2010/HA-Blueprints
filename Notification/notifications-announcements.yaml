@@ -58,7 +58,7 @@ blueprint:
             8 - Numeric State - Above
             9 - Numeric State - Below
             10 - Numeric State - Above & Below
-            
+            11 - idle Timer
             
             A numbering system has been implemented to facilitate navigation within the dropdown selections. Each number corresponds to a specific configuration,
             aiding users in identifying and adjusting the settings used within each selection. For instance, when selecting "8 - Numeric State - Above"
