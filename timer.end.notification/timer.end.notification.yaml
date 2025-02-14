@@ -1,10 +1,52 @@
-- service: notify.mobile_app_iphone
-  data:
-    title: "⏳ טיימר נגמר!"
-    message: "מה תרצה לעשות?"
+blueprint:
+  name: "⏳ התראה בסיום טיימר"
+  description: "שליחת התראה אוטומטית ל-`notify.raz_telegram` כאשר אחד מהטיימרים שנבחרו מסתיים."
+  domain: automation
+  input:
+    timers:
+      name: "בחירת טיימרים"
+      description: "בחר טיימרים שעבורם תישלח התראה כאשר הם מסתיימים."
+      selector:
+        entity:
+          domain: timer
+          multiple: true
+
+    notify_title:
+      name: "כותרת ההודעה"
+      description: "הזן כותרת מותאמת להודעה שתישלח כאשר טיימר יסתיים."
+      default: "⏳ התראה על טיימר"
+      selector:
+        text:
+
+    notify_message:
+      name: "תוכן ההודעה"
+      description: "הזן הודעה מותאמת שתישלח כאשר טיימר מסתיים. ניתן להשתמש ב-{{ timer }} עבור שם הטיימר."
+      default: "הטיימר {{ timer }} הסתיים!"
+      selector:
+        text:
+
+    notify_actions:
+      name: "פעולות נוספות"
+      description: "בחר אם להוסיף כפתורים להתראה (לדוגמה: השתקה, הפעלה מחדש)."
+      default: []
+      selector:
+        object:
+
+mode: parallel
+
+trigger:
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: !input timers
+
+action:
+  - variables:
+      timer: "{{ trigger.event.data.entity_id.split('.')[-1] }}"
+
+  - service: notify.raz_telegram
     data:
-      actions:
-        - action: "RESTART_TIMER"
-          title: "🔄 התחל מחדש"
-        - action: "SILENCE"
-          title: "🔕 השתק"
+      title: !input notify_title
+      message: "{{ notify_message | replace('{{ timer }}', timer) }}"
+      data:
+        actions: !input notify_actions
