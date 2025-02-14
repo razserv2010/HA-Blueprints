@@ -1,6 +1,6 @@
 blueprint:
-  name: Timer Notification
-  description: שולח התראה כאשר טיימר מסתיים
+  name: Timer Notification with Custom Message
+  description: שולח התראה כאשר טיימר מסתיים, עם הודעה מותאמת אישית
   domain: automation
   input:
     timer_entity:
@@ -15,6 +15,13 @@ blueprint:
       default: "notify.raz_telegram"
       selector:
         text:
+    custom_message:
+      name: Custom Message
+      description: ההודעה שתישלח כאשר הטיימר מסתיים (ניתן להשתמש ב-{{ timer }} כדי להכניס את שם הטיימר)
+      default: "⏳ הטיימר '{{ timer }}' הסתיים!"
+      selector:
+        text:
+
 trigger:
   platform: event
   event_type: timer.finished
@@ -22,9 +29,11 @@ trigger:
     entity_id: !input timer_entity
 
 action:
+  - variables:
+      timer: "{{ trigger.event.data.entity_id }}"
   - service: !input notify_service
     data:
-      message: "⏳ הטיימר '{{ trigger.event.data.entity_id }}' הסתיים!"
+      message: "{{ !input custom_message | replace('{{ timer }}', timer) }}"
       title: "⏰ התראה על טיימר"
 
 mode: parallel
