@@ -1,35 +1,10 @@
-blueprint:
-  name: "⏳ התראה בסיום טיימר"
-  description: "שליחת התראה כאשר אחד מהטיימרים שבחרת מסתיים, עם אפשרות לפעולות."
-  domain: automation
-  input:
-    timers:
-      name: "בחירת טיימרים"
-      description: "בחר טיימרים שעבורם תישלח התראה כאשר הם מסתיימים."
-      selector:
-        entity:
-          domain: timer
-          multiple: true
-
-    notify_action:
-      name: "פעולת Notify"
-      description: "הגדר כאן את פעולת ההתראה שתרצה לבצע (למשל שליחה לטלגרם, אפליקציה או הודעה קבועה)."
-      selector:
-        action:
-
-mode: parallel
-
-trigger:
-  - platform: event
-    event_type: timer.finished
-    event_data:
-      entity_id: !input timers
-
-action:
-  - variables:
-      timer: "{{ trigger.event.data.entity_id.split('.')[-1] }}"
-
-  - if:
-      - condition: template
-        value_template: "{{ notify_action is not none }}"
-    then: !input notify_action
+- service: notify.mobile_app_iphone
+  data:
+    title: "⏳ טיימר נגמר!"
+    message: "מה תרצה לעשות?"
+    data:
+      actions:
+        - action: "RESTART_TIMER"
+          title: "🔄 התחל מחדש"
+        - action: "SILENCE"
+          title: "🔕 השתק"
