@@ -13,10 +13,16 @@ blueprint:
           
     notify_service:
       name: "שירות התראה"
-      description: "בחר את שירות ההתראה הרצוי מתוך הרשימה (כגון notify.mobile_app_xxx, notify.telegram וכו')."
+      description: "בחר את שירות ההתראה מתוך הרשימה (למשל notify.mobile_app_xxx, notify.telegram וכו')."
       selector:
-        service:
-          integration: notify
+        select:
+          options:
+            - "notify.mobile_app_iphone"
+            - "notify.mobile_app_android"
+            - "notify.telegram"
+            - "notify.persistent_notification"
+            - "notify.alexa_media"
+          multiple: false
     
     notify_title:
       name: "כותרת ההודעה"
