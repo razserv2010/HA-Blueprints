@@ -1,6 +1,6 @@
 blueprint:
   name: "⏳ התראה בסיום טיימר"
-  description: "שליחת התראה כאשר אחד מהטיימרים שבחרת מסתיים."
+  description: "שליחת התראה כאשר אחד מהטיימרים שבחרת מסתיים, עם אפשרות לפעולות."
   domain: automation
   input:
     timers:
@@ -10,14 +10,15 @@ blueprint:
         entity:
           domain: timer
           multiple: true
-          
-    notify_service:
-      name: "שירות התראה"
-      description: "בחר את שירות ההתראה הרצוי מתוך הרשימה (notify.telegram, notify.mobile_app_xxx וכו')."
-      selector:
-        service:
-          integration: notify
     
+    notify_target:
+      name: "יעד ההתראה"
+      description: "בחר למי לשלוח את ההתראה (למשל `mobile_app_xxx`, `telegram`, `alexa_media`)."
+      selector:
+        entity:
+          domain: notify
+          multiple: true
+
     notify_title:
       name: "כותרת ההודעה"
       description: "הזן כותרת מותאמת להודעה שתישלח כאשר טיימר יסתיים."
@@ -34,7 +35,7 @@ blueprint:
 
     notify_actions:
       name: "פעולות נוספות"
-      description: "בחר אם להוסיף כפתורים בהתראה (לדוגמא: השתקה, הפעלת טיימר חדש וכו')."
+      description: "בחר כפתורים שיופיעו בהתראה (לדוגמה: השתקה, הפעלה מחדש וכו')."
       default: []
       selector:
         object:
@@ -51,8 +52,9 @@ action:
   - variables:
       timer: "{{ trigger.event.data.entity_id.split('.')[-1] }}"
 
-  - service: !input notify_service
+  - service: "notify.notify"
     data:
+      target: !input notify_target
       title: !input notify_title
       message: "{{ notify_message | replace('{{ timer }}', timer) }}"
       data:
