@@ -3,7 +3,7 @@ blueprint:
   description: >
     # 📢 Notifications & Announcements
     
-    **Version: 1.5**  (עודכן עם תמיכה ב-"idle" עבור `timer` entities)
+    **Version: 1.5** (תמיכה נוספת ב-"idle" עבור timer entities)
 
   domain: automation
   input:
@@ -44,6 +44,104 @@ blueprint:
                   value: "numeric_state_above_below"
                 - label: 11 - Idle (Timer State)
                   value: "idle"
+        trigger_state_entity:
+          name: State Entities
+          description: >
+            יש לבחור ישויות שיפעילו את הטריגר עם שינוי מצב.
+          default: []
+          selector:
+            entity:
+              multiple: true
+        trigger_numeric_entity:
+          name: Numeric State Entities
+          description: >
+            ישויות להפעלת טריגר עם שינוי ערך מספרי.
+          default: []
+          selector:
+            entity:
+              multiple: true
+        above_state:
+          name: Numeric State Above Option
+          default: 0
+          selector:
+            number:
+              min: -20
+              max: 100
+              step: 1
+              unit_of_measurement: value
+        below_state:
+          name: Numeric State Below Option
+          default: 0
+          selector:
+            number:
+              min: -20
+              max: 100
+              step: 1
+              unit_of_measurement: value
+        time_delay_state:
+          name: Time Delay
+          default:
+            hours: 0
+            minutes: 0
+            seconds: 0
+          selector:
+            duration:
+
+    media_player:
+      name: Media Player
+      description: >
+        בחר את הנגן להשמעת הכרזות TTS.
+      default: []
+      selector:
+        entity:
+          filter:
+            domain: media_player
+          multiple: true
+
+    text_to_speech_engine:
+      name: Text-to-Speech Service Provider
+      default: []
+      selector:
+        entity:
+          filter:
+            domain: tts
+
+    notify_title:
+      name: Title
+      default: 📢 Enter Notify Title Here
+      selector:
+        text:
+
+    notify_message:
+      name: Message
+      default: Enter Notify Message Here 🙂
+      selector:
+        text:
+
+    notify_tts_message:
+      name: Announcement Message
+      default: Enter TTS Message Here
+      selector:
+        text:
+          multiline: true
+
+    persistent_title:
+      name: Title
+      default: 📢 Enter UI Title Here
+      selector:
+        text:
+
+    persistent_message:
+      name: Message
+      default: Enter UI Message Here 🙂
+      selector:
+        text:
+
+    custom_actions:
+      name: Custom Actions
+      default: []
+      selector:
+        action:
 
 triggers:
   - trigger: state
@@ -105,33 +203,30 @@ action:
     - alias: "Check if notification is enabled"
       conditions:
         - "{{ include_notify == 'enable_mobile_app_notify' }}"
-        - "{{ filtered_devices | length > 0 }}"
       sequence:
-        - alias: Send a notification to each device
+        - alias: Send a notification
           repeat:
-            for_each: "{{ filtered_devices }}"
+            for_each: "{{ notify_device }}"
             sequence:
-              - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
+              - service: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
                 data:
                   title: !input notify_title
                   message: !input notify_message
-                  data: "{{ device_message_data }}"
   - choose:
-    - alias: "Use the persistent notification is enabled"
+    - alias: "Use the persistent notification if enabled"
       conditions:
-        - condition: template
-          value_template: "{{ include_persistent_notification == 'enable_persistent_notification' }}"
+        - "{{ include_persistent_notification == 'enable_persistent_notification' }}"
       sequence:
-        - action: persistent_notification.create
+        - service: persistent_notification.create
           data:
             title: !input persistent_title
             message: !input persistent_message
   - choose:
-    - alias: "Check if tts announcement is enabled"
+    - alias: "Check if TTS announcement is enabled"
       conditions:
         - "{{ include_tts_announcement == 'enable_tts_announcement' }}"
       sequence:
-        - action: tts.speak
+        - service: tts.speak
           target:
             entity_id: !input text_to_speech_engine
           data:
@@ -140,6 +235,5 @@ action:
   - choose:
     - alias: "Perform the custom action"
       conditions:
-        - condition: template
-          value_template: "{{ 'enable_custom_actions' in include_custom_actions }}"
+        - "{{ include_custom_actions == 'enable_custom_actions' }}"
       sequence: !input custom_actions
