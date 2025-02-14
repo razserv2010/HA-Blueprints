@@ -3,7 +3,7 @@ blueprint:
   description: >
     # 📢 Notifications & Announcements
     
-    **Version: 1.5**  (עודכן עם תמיכה ב-"idle" עבור `timer` entities)
+    **Version: 1.5** (תמיכה נוספת ב-"idle" עבור timer entities)
 
   domain: automation
   input:
@@ -105,29 +105,26 @@ action:
     - alias: "Check if notification is enabled"
       conditions:
         - "{{ include_notify == 'enable_mobile_app_notify' }}"
-        - "{{ filtered_devices | length > 0 }}"
       sequence:
         - alias: Send a notification to each device
           repeat:
-            for_each: "{{ filtered_devices }}"
+            for_each: "{{ notify_device }}"
             sequence:
               - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
                 data:
                   title: !input notify_title
                   message: !input notify_message
-                  data: "{{ device_message_data }}"
   - choose:
-    - alias: "Use the persistent notification is enabled"
+    - alias: "Use the persistent notification if enabled"
       conditions:
-        - condition: template
-          value_template: "{{ include_persistent_notification == 'enable_persistent_notification' }}"
+        - "{{ include_persistent_notification == 'enable_persistent_notification' }}"
       sequence:
         - action: persistent_notification.create
           data:
             title: !input persistent_title
             message: !input persistent_message
   - choose:
-    - alias: "Check if tts announcement is enabled"
+    - alias: "Check if TTS announcement is enabled"
       conditions:
         - "{{ include_tts_announcement == 'enable_tts_announcement' }}"
       sequence:
@@ -140,6 +137,5 @@ action:
   - choose:
     - alias: "Perform the custom action"
       conditions:
-        - condition: template
-          value_template: "{{ 'enable_custom_actions' in include_custom_actions }}"
+        - "{{ include_custom_actions == 'enable_custom_actions' }}"
       sequence: !input custom_actions
