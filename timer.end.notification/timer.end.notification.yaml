@@ -11,32 +11,11 @@ blueprint:
           domain: timer
           multiple: true
 
-    notify_targets:
-      name: "שירותי התראה"
-      description: "בחר את שירותי ההתראה (כגון notify.mobile_app_xxx, notify.telegram)."
+    notify_action:
+      name: "פעולת Notify"
+      description: "הגדר כאן את פעולת ההתראה שתרצה לבצע (למשל שליחה לטלגרם, אפליקציה או הודעה קבועה)."
       selector:
-        entity:
-          domain: notify
-          multiple: true
-
-    notify_title:
-      name: "כותרת ההודעה"
-      description: "הזן כותרת מותאמת להודעה שתישלח כאשר טיימר יסתיים."
-      selector:
-        text:
-
-    notify_message:
-      name: "תוכן ההודעה"
-      description: "הזן הודעה מותאמת שתישלח כאשר טיימר מסתיים. ניתן להשתמש ב-{{ timer }} עבור שם הטיימר."
-      selector:
-        text:
-
-    notify_actions:
-      name: "פעולות נוספות"
-      description: "בחר אם להוסיף כפתורים להתראה (לדוגמה: השתקה, הפעלה מחדש)."
-      default: []
-      selector:
-        object:
+        action:
 
 mode: parallel
 
@@ -50,12 +29,7 @@ action:
   - variables:
       timer: "{{ trigger.event.data.entity_id.split('.')[-1] }}"
 
-  - repeat:
-      for_each: !input notify_targets
-      sequence:
-        - service: "notify.{{ repeat.item.split('.')[-1] }}"
-          data:
-            title: !input notify_title
-            message: "{{ notify_message | replace('{{ timer }}', timer) }}"
-            data:
-              actions: !input notify_actions
+  - if:
+      - condition: template
+        value_template: "{{ notify_action is not none }}"
+    then: !input notify_action
