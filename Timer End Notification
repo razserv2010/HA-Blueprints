@@ -1,0 +1,31 @@
+blueprint:
+  name: התראה בסיום טיימר
+  description: שליחת הודעה כאשר אחד מהטיימרים שבחרת מסתיים.
+  domain: automation
+  input:
+    timers:
+      name: טיימרים
+      description: בחר טיימרים שעבורם תישלח התראה כאשר הם מסתיימים
+      selector:
+        entity:
+          domain: timer
+          multiple: true
+    notify_service:
+      name: שירות התראה
+      description: בחר שירות לשליחת ההתראה (למשל notify.mobile_app_xxx)
+      selector:
+        text:
+
+mode: parallel
+
+trigger:
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: !input timers
+
+action:
+  - service: !input notify_service
+    data:
+      message: "הטיימר {{ trigger.event.data.entity_id.split('.')[-1] }} הסתיים!"
+      title: "⏳ התראה על טיימר"
