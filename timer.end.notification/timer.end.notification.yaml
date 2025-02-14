@@ -15,9 +15,9 @@ blueprint:
       name: "שירות התראה"
       description: "בחר את שירות ההתראה (כגון notify.mobile_app_xxx, notify.telegram וכו')."
       selector:
-        service:
-          integration: notify
-    
+        entity:
+          domain: notify
+
     notify_title:
       name: "כותרת ההודעה"
       description: "הזן כותרת מותאמת להודעה שתישלח כאשר טיימר יסתיים."
@@ -44,7 +44,7 @@ action:
   - variables:
       timer: "{{ trigger.event.data.entity_id.split('.')[-1] }}"
 
-  - service: !input notify_service
+  - service: "{{ states(!input notify_service) }}"
     data:
       title: !input notify_title
       message: "{{ notify_message | replace('{{ timer }}', timer) }}"
