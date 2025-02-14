@@ -1,0 +1,145 @@
+blueprint:
+  name: Notifications & Announcements
+  description: >
+    # 📢 Notifications & Announcements
+    
+    **Version: 1.5**  (עודכן עם תמיכה ב-"idle" עבור `timer` entities)
+
+  domain: automation
+  input:
+    trigger_settings:
+      name: "Triggers *"
+      icon: mdi:cog-outline
+      collapsed: true
+      input:
+        trigger_state:
+          name: Trigger - State *
+          description: >
+            בחר את הסטטוס להפעלת הטריגר. נוספה האפשרות **idle** לתמיכה בטיימרים.
+          default: button_any_state
+          selector:
+            select:
+              custom_value: true
+              mode: dropdown
+              options:
+                - label: 1 - Button Or Any State
+                  value: "button_any_state"
+                - label: 2 - ON
+                  value: "on"
+                - label: 3 - OFF
+                  value: "off"
+                - label: 4 - Unavailable
+                  value: "unavailable"
+                - label: 5 - Unknown
+                  value: "unknown"
+                - label: 6 - Home
+                  value: "home"
+                - label: 7 - Not Home
+                  value: "not_home"
+                - label: 8 - Numeric State - Above
+                  value: "numeric_state_above"
+                - label: 9 - Numeric State - Below
+                  value: "numeric_state_below"
+                - label: 10 - Numeric State - Above & Below
+                  value: "numeric_state_above_below"
+                - label: 11 - Idle (Timer State)
+                  value: "idle"
+
+triggers:
+  - trigger: state
+    id: "t0"
+    entity_id: !input trigger_state_entity
+    for: !input time_delay_state
+  - trigger: state
+    id: "t1"
+    entity_id: !input trigger_state_entity
+    to: !input trigger_state
+    for: !input time_delay_state
+  - trigger: numeric_state
+    id: "t2"
+    entity_id: !input trigger_numeric_entity
+    above: !input above_state
+    for: !input time_delay_state
+  - trigger: numeric_state
+    id: "t3"
+    entity_id: !input trigger_numeric_entity
+    below: !input below_state
+    for: !input time_delay_state
+  - trigger: state
+    id: "t4"
+    entity_id: !input trigger_state_entity
+    to: "idle"
+    for: !input time_delay_state
+
+condition:
+  - condition: or
+    conditions:
+      - condition: and
+        conditions:
+          - condition: trigger
+            id: 't0'
+          - "{{ trigger_state == 'button_any_state' }}"
+      - condition: and
+        conditions:
+          - condition: trigger
+            id: 't1'
+          - "{{ trigger_state not in ['button_any_state', 'numeric_state_above', 'numeric_state_below', 'numeric_state_above_below'] }}"
+      - condition: and
+        conditions:
+          - condition: trigger
+            id: 't2'
+          - "{{ trigger_state in ['numeric_state_above', 'numeric_state_above_below'] }}"
+      - condition: and
+        conditions:
+          - condition: trigger
+            id: 't3'
+          - "{{ trigger_state in ['numeric_state_below', 'numeric_state_above_below'] }}"
+      - condition: and
+        conditions:
+          - condition: trigger
+            id: 't4'
+          - "{{ trigger_state == 'idle' }}"
+
+action:
+  - choose:
+    - alias: "Check if notification is enabled"
+      conditions:
+        - "{{ include_notify == 'enable_mobile_app_notify' }}"
+        - "{{ filtered_devices | length > 0 }}"
+      sequence:
+        - alias: Send a notification to each device
+          repeat:
+            for_each: "{{ filtered_devices }}"
+            sequence:
+              - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
+                data:
+                  title: !input notify_title
+                  message: !input notify_message
+                  data: "{{ device_message_data }}"
+  - choose:
+    - alias: "Use the persistent notification is enabled"
+      conditions:
+        - condition: template
+          value_template: "{{ include_persistent_notification == 'enable_persistent_notification' }}"
+      sequence:
+        - action: persistent_notification.create
+          data:
+            title: !input persistent_title
+            message: !input persistent_message
+  - choose:
+    - alias: "Check if tts announcement is enabled"
+      conditions:
+        - "{{ include_tts_announcement == 'enable_tts_announcement' }}"
+      sequence:
+        - action: tts.speak
+          target:
+            entity_id: !input text_to_speech_engine
+          data:
+            media_player_entity_id: !input media_player
+            message: !input notify_tts_message
+  - choose:
+    - alias: "Perform the custom action"
+      conditions:
+        - condition: template
+          value_template: "{{ 'enable_custom_actions' in include_custom_actions }}"
+      sequence: !input custom_actions
