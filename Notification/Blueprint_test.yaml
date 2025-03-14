@@ -1,0 +1,141 @@
+blueprint:
+  name: "התראה Ai מדליק גחלים"
+  description: "Blueprint להתראות AI בעת הדלקת גחלים לנרגילה."
+  domain: automation
+  input:
+    switch_entity:
+      name: "מתג הדלקת גחלים"
+      selector:
+        entity:
+          domain: switch
+    timer_entity:
+      name: "טיימר גחלים"
+      selector:
+        entity:
+          domain: timer
+    notify_target:
+      name: "יעד התראה"
+      selector:
+        entity:
+          domain: notify
+    computer_notify_target:
+      name: "התראה למחשב"
+      selector:
+        entity:
+          domain: notify
+    shield_notify_target:
+      name: "התראה לNvidia Shield"
+      selector:
+        entity:
+          domain: notify
+
+automation:
+  - alias: אם מדליק גחלים נדלק
+    trigger:
+      - platform: state
+        entity_id: !input switch_entity
+        to: "on"
+    action:
+      - alias: שינוי ווליום TTS בהתאם למיקום רז
+        service: notify.mobile_app_raz_phone
+        data:
+          message: command_volume_level
+          data:
+            media_stream: alarm_stream
+            command: >-
+              {{ 6 if is_state('device_tracker.raz_bermuda_tracker_bermuda_tracker', 'home') else 15 }}
+            ttl: 0
+            priority: high
+      - variables:
+          person_name: |-
+            {% if now().hour < 3 %}
+              "לילה טוב נסיך"
+            {% elif now().hour < 5 %}
+              "לפנות בוקר טוב נסיך"
+            {% elif now().hour < 12 %}
+              "בוקר טוב נסיך"
+            {% elif now().hour < 16 %}
+              "צהריים טובים נסיך"
+            {% elif now().hour < 19 %}
+              "אחר הצהריים טובים נסיך"
+            {% elif now().hour < 22 %}
+              "ערב טוב נסיך"
+            {% else %}
+              "לילה טוב נסיך"
+            {% endif %}
+          finish_time: >-
+            {% set remaining_time = state_attr(!input timer_entity, 'remaining') %} 
+            {% if remaining_time %}
+              {% set remaining_parts = remaining_time.split(':') %}
+              {% set minutes = remaining_parts[1] | int %}
+              {% set seconds = remaining_parts[2] | int %}
+              {% set now = now() %}
+              {% set finish_time = now + timedelta(minutes=minutes, seconds=seconds) %}
+              {{ finish_time.strftime('%H:%M') }}
+            {% else %}
+              "לא ידוע"
+            {% endif %}
+          ai_prompt: >-
+            אל תודיעי לי מי את. רק תרשום לי סקירה כעוזרת משוגעת: {{ person_name }},
+            {% if states(!input switch_entity) == 'on' %}
+              הגחלים יהיו מוכנים בשעה: {{ finish_time }}.
+              הזמן שנותר לסיום: {{ state_attr(!input timer_entity, 'remaining') }}.
+            {% else %}
+              הגחלים כבויים.
+            {% endif %}
+      - service: conversation.process
+        data:
+          agent_id: conversation.google_generative_ai
+          text: "{{ ai_prompt }}"
+          language: he
+        response_variable: shisha
+      - variables:
+          tts_message: >-
+            {% if shisha.response.speech.plain.speech is defined and shisha.response.speech.plain.speech | string | trim != '' %}
+              {{ shisha.response.speech.plain.speech | string }}
+            {% else %}
+              הגחלים מוכנים! אפשר להתחיל לעשן 🍂🔥
+            {% endif %}
+          notify_title: "🔥 עדכון חם גחלים של הנרגילה! 🔥"
+      - parallel:
+          - service: !input notify_target
+            data:
+              message: "{{ tts_message }}"
+              title: "{{ notify_title }}"
+              data:
+                ttl: 0
+                priority: high
+                importance: high
+                sticky: true
+                visibility: public
+          - service: !input notify_target
+            data:
+              message: TTS
+              data:
+                media_stream: alarm_stream
+                ttl: 0
+                priority: high
+                importance: high
+                tts_lang: heb
+                tts_text: "{{ tts_message }}"
+                visibility: public
+          - service: !input computer_notify_target
+            data:
+              message: "{{ tts_message }}"
+          - service: !input shield_notify_target
+            data:
+              title: "התראות מהבית:"
+              message: "{{ tts_message }}"
+              data:
+                icon:
+                  path: /config/www/pictures/logo.png
+                fontsize: large
+                position: top-right
+                duration: 15
+                transparency: 50%
+                interrupt: 1
+                ttl: 0
+                priority: high
+                importance: high
+                sticky: true
+                visibility: public
