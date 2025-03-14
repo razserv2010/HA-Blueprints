@@ -1,6 +1,6 @@
 blueprint:
   name: "התראה Ai מדליק גחלים"
-  description: "Blueprint להתראות AI בעת הדלקת גחלים לנרגילה."
+  description: "Blueprint להתראות AI בעת הדלקת גחלים לנרגילה עם אפשרות להתאמה אישית."
   domain: automation
   input:
     switch_entity:
@@ -16,18 +16,22 @@ blueprint:
     notify_target:
       name: "יעד התראה"
       selector:
-        entity:
-          domain: notify
+        device:
+          integration: mobile_app
     computer_notify_target:
       name: "התראה למחשב"
       selector:
-        entity:
-          domain: notify
+        device:
+          integration: notify
     shield_notify_target:
       name: "התראה לNvidia Shield"
       selector:
-        entity:
-          domain: notify
+        device:
+          integration: notify
+    ai_text:
+      name: "טקסט מותאם אישית ל-AI"
+      selector:
+        text:
 
 automation:
   - alias: אם מדליק גחלים נדלק
@@ -75,14 +79,7 @@ automation:
             {% else %}
               "לא ידוע"
             {% endif %}
-          ai_prompt: >-
-            אל תודיעי לי מי את. רק תרשום לי סקירה כעוזרת משוגעת: {{ person_name }},
-            {% if states(!input switch_entity) == 'on' %}
-              הגחלים יהיו מוכנים בשעה: {{ finish_time }}.
-              הזמן שנותר לסיום: {{ state_attr(!input timer_entity, 'remaining') }}.
-            {% else %}
-              הגחלים כבויים.
-            {% endif %}
+          ai_prompt: "{{ !input ai_text }}"
       - service: conversation.process
         data:
           agent_id: conversation.google_generative_ai
@@ -98,19 +95,21 @@ automation:
             {% endif %}
           notify_title: "🔥 עדכון חם גחלים של הנרגילה! 🔥"
       - parallel:
-          - service: !input notify_target
+          - service: notify
             data:
               message: "{{ tts_message }}"
               title: "{{ notify_title }}"
+              target: "{{ !input notify_target }}"
               data:
                 ttl: 0
                 priority: high
                 importance: high
                 sticky: true
                 visibility: public
-          - service: !input notify_target
+          - service: notify
             data:
               message: TTS
+              target: "{{ !input notify_target }}"
               data:
                 media_stream: alarm_stream
                 ttl: 0
@@ -119,11 +118,13 @@ automation:
                 tts_lang: heb
                 tts_text: "{{ tts_message }}"
                 visibility: public
-          - service: !input computer_notify_target
+          - service: notify
             data:
+              target: "{{ !input computer_notify_target }}"
               message: "{{ tts_message }}"
-          - service: !input shield_notify_target
+          - service: notify
             data:
+              target: "{{ !input shield_notify_target }}"
               title: "התראות מהבית:"
               message: "{{ tts_message }}"
               data:
