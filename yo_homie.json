@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "wake-word": "yo_homie",
+  "model": "yo_homie.tflite",
+  "parameters": {
+    "sample_rate": 16000,
+    "frame_length": 512,
+    "feature_bin_count": 40,
+    "probability_threshold": 0.8
+  }
+}
