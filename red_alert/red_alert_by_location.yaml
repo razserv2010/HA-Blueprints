@@ -12,8 +12,7 @@ blueprint:
     person_1_phone:
       name: שירות ההתראה לאדם 1
       selector:
-        service:
-          integration: notify
+        text:
     person_1_location:
       name: חיישן מיקום לאדם 1
       selector:
@@ -27,8 +26,7 @@ blueprint:
     person_2_phone:
       name: שירות ההתראה לאדם 2
       selector:
-        service:
-          integration: notify
+        text:
     person_2_location:
       name: חיישן מיקום לאדם 2
       selector:
