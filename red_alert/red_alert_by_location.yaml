@@ -5,33 +5,12 @@ blueprint:
     טלפון, TTS, אורות וטלוויזיה. מבוסס על סוג ההתרעה (מוקדמת, מיידית, סיום).
   domain: automation
   input:
-    person_1_name:
-      name: שם האדם 1
+    people:
+      name: רשימת אנשים
+      description: הזן רשימה של אנשים עם שם, שירות notify וחיישן מיקום (YAML)
+      default: []
       selector:
-        text:
-    person_1_phone:
-      name: שירות ההתראה לאדם 1
-      selector:
-        text:
-    person_1_location:
-      name: חיישן מיקום לאדם 1
-      selector:
-        entity:
-          domain: sensor
-
-    person_2_name:
-      name: שם האדם 2
-      selector:
-        text:
-    person_2_phone:
-      name: שירות ההתראה לאדם 2
-      selector:
-        text:
-    person_2_location:
-      name: חיישן מיקום לאדם 2
-      selector:
-        entity:
-          domain: sensor
+        object:
 
     presence_entities:
       name: ישויות לזיהוי נוכחות בבית
@@ -93,13 +72,6 @@ automation:
       to: "off"
 
   variables:
-    people:
-      - person: !input person_1_name
-        phone: !input person_1_phone
-        location: !input person_1_location
-      - person: !input person_2_name
-        phone: !input person_2_phone
-        location: !input person_2_location
     alerts: >
       {% if trigger.id == 'מוקדמת' %}
         {{ state_attr('binary_sensor.oref_alert_all_areas_preemptive_update', 'country_active_alerts') or [] }}
@@ -110,7 +82,6 @@ automation:
       {% endif %}
 
   repeat:
-    for_each: "{{ people }}"
+    for_each: !input people
     sequence:
       # (הקוד של sequence ממשיך כרגיל מכאן)
-      # לא שונה כדי לשמור על תוכן מלא כמו שנמצא כרגע
